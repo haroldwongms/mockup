@@ -66,7 +66,7 @@
 		}
 	},
 	"variables": {
-		"openshiftDeploymentScriptUrl": "https://raw.githubusercontent.com/haroldwongms/openshift-enterprise/master/deployOpenShift.sh",
+		"openshiftDeploymentScriptUrl": "https://raw.githubusercontent.com/haroldwongms/mockup/master/deployOpenShift.sh",
 		"openshiftDeploymentScriptFileName": "deployOpenShift.sh"
 	},
 	"resources": [{
