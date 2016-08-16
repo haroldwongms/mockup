@@ -45,6 +45,7 @@ deployment_type=openshift-enterprise
 docker_udev_workaround=True
 # containerized=true
 openshift_use_dnsmasq=no
+openshift_master_default_subdomain=apps.weocd.net
 
 openshift_master_cluster_public_hostname=$MASTERPUBLICIPHOSTNAME
 openshift_master_cluster_public_vip=$MASTERPUBLICIPADDRESS
@@ -58,7 +59,7 @@ $MASTER.$DOMAIN
 
 # host group for nodes
 [nodes]
-$MASTER.$DOMAIN
+$MASTER.$DOMAIN openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
 EOF
 
 for (( c=0; c<$NODECOUNT; c++ ))
@@ -88,7 +89,7 @@ echo "Deploying Registry"
 
 echo "Deploying Router"
 
-# runuser -l $SUDOUSER -c "sudo oadm router osrouter --replicas=$NODECOUNT --credentials=/etc/origin/master/openshift-router.kubeconfig --service-account=router"
+runuser -l $SUDOUSER -c "sudo oadm router osrouter --replicas=$NODECOUNT --credentials=/etc/origin/master/openshift-router.kubeconfig --service-account=router"
 
 echo "Re-enabling requiretty"
 
