@@ -45,7 +45,7 @@ deployment_type=openshift-enterprise
 docker_udev_workaround=True
 # containerized=true
 openshift_use_dnsmasq=no
-openshift_master_default_subdomain=apps.weocd.net
+openshift_master_default_subdomain=$ROUTING
 
 openshift_master_cluster_public_hostname=$MASTERPUBLICIPHOSTNAME
 openshift_master_cluster_public_vip=$MASTERPUBLICIPADDRESS
