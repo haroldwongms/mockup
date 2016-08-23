@@ -44,11 +44,9 @@ nodes
 # Set variables common for all OSEv3 hosts
 [OSEv3:vars]
 ansible_ssh_user=$SUDOUSER
-#ansible_sudo=true
 ansible_become=yes
 deployment_type=openshift-enterprise
 docker_udev_workaround=True
-# containerized=true
 openshift_use_dnsmasq=no
 openshift_master_default_subdomain=$ROUTING
 
@@ -65,44 +63,12 @@ $MASTER.$DOMAIN
 # host group for nodes
 [nodes]
 $MASTER.$DOMAIN openshift_node_labels="{'region': 'infra', 'zone': 'default'}" openshift_schedulable=true
+$NODEPREFIX-[1:${NODECOUNT}].$DOMAIN openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
 EOF
 
-for (( c=0; c<$NODECOUNT; c++ ))
-do
-  echo "$NODEPREFIX-$c.$DOMAIN" >> /etc/ansible/hosts
-done
-
-
-# Initiating installation of OpenShift Enterprise using Ansible Playbook
-echo $(date) " - Installing OpenShift Enterprise via Ansible Playbook"
-
-runuser -l $SUDOUSER -c "ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
-
-echo $(date) " - Modifying sudoers"
-
-sed -i -e "s/Defaults    requiretty/# Defaults    requiretty/" /etc/sudoers
-sed -i -e '/Defaults    env_keep += "LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"/aDefaults    env_keep += "PATH"' /etc/sudoers
-
-echo $(date) "- Deploying Registry"
-
-# runuser -l $SUDOUSER -c "sudo oadm registry --config=/etc/origin/master/admin.kubeconfig --credentials=/etc/origin/master/openshift-registry.kubeconfig"
-
-# runuser -l $SUDOUSER -c "sudo oadm registry --config=/etc/origin/master/admin.kubeconfig --service-account=registry --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'"
-
-# Deploying Router
-
-echo $(date) "- Deploying Router"
-
-runuser -l $SUDOUSER -c "sudo oadm router osrouter --replicas=$NODECOUNT --credentials=/etc/origin/master/openshift-router.kubeconfig --service-account=router"
-
-echo $(date) "- Re-enabling requiretty"
-
-sed -i -e "s/# Defaults    requiretty/Defaults    requiretty/" /etc/sudoers
-
-# Adding user to OpenShift authentication file
-echo $(date) "- Adding OpenShift user"
-
-mkdir -p /etc/origin/master
-htpasswd -cb /etc/origin/master/htpasswd $SUDOUSER $PASSWORD
+# for (( c=0; c<$NODECOUNT; c++ ))
+# do
+#   echo "$NODEPREFIX-$c.$DOMAIN" >> /etc/ansible/hosts
+# done
 
 echo $(date) " - Script complete"
