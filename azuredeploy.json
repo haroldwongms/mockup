@@ -834,65 +834,9 @@
 					"commandToExecute": "[concat('sh ', variables('nodePrepScriptFileName'), ' ', parameters('cloudAccessUsername'), ' ', parameters('cloudAccessPassword'), ' ', parameters('cloudAccessPoolId'))]"
 				}
 			}
-		}, {
-			"name": "OpenShiftDeployment",
-			"type": "Microsoft.Resources/deployments",
-			"apiVersion": "[variables('apiVersionLinkTemplate')]",
-			"dependsOn": [
-				"[concat('Microsoft.Compute/virtualMachines/', parameters('openshiftMasterHostname'), '/extensions/deployOpenShift')]",
-				"nodeScriptLoop"
-			],
-			"properties": {
-				"mode": "Incremental",
-				"templateLink": {
-					"uri": "[variables('openshiftDeploymentTemplateUrl')]",
-					"contentVersion": "1.0.0.0"
-				},
-				"parameters": {
-					"baseUrl": {
-						"value": "[parameters('baseUrl')]"
-					},
-					"openshiftMasterHostname": {
-						"value": "[parameters('openshiftMasterHostname')]"
-					},
-					"openshiftMasterPublicIpFqdn": {
-						"value": "[reference(parameters('openshiftMasterPublicIpDnsLabelPrefix')).dnsSettings.fqdn]"
-					},
-					"openshiftMasterPublicIpAddress": {
-						"value": "[reference(parameters('openshiftMasterPublicIpDnsLabelPrefix')).ipAddress]"
-					},
-					"nodePrefix": {
-						"value": "[variables('namingInfix')]"
-					},
-					"nodeInstanceCount": {
-						"value": "[parameters('nodeInstanceCount')]"
-					},
-					"adminUsername": {
-						"value": "[parameters('adminUsername')]"
-					},
-					"adminPassword": {
-						"value": "[parameters('adminPassword')]"
-					},
-					"defaultSubDomain": {
-						"value": "[concat(reference(parameters('nodeLbPublicIpDnsLabelPrefix')).ipAddress, '.xip.io')]"
-					},
-					"sshPrivateKey": {
-						"reference": {
-							"keyvault": {
-								"id": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('keyVaultResourceGroup'), '/providers/Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
-							},
-							"secretName": "[parameters('keyVaultSecret')]"
-						}
-					}
-				}
-			}
 		}
 	],
 	"outputs": {
-		"openshiftConsoleUrl": {
-			"type": "string",
-			"value": "[concat('https://', reference(parameters('openshiftMasterPublicIpDnsLabelPrefix')).dnsSettings.fqdn, ':8443/console')]"
-		},
 		"openshiftMasterSsh": {
 			"type": "string",
 			"value": "[concat('ssh ', parameters('adminUsername'), '@', reference(parameters('openshiftMasterPublicIpDnsLabelPrefix')).dnsSettings.fqdn)]"
