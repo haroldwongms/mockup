@@ -2,6 +2,14 @@
 	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
 	"contentVersion": "1.0.0.0",
 	"parameters": {
+		"baseUrl": {
+			"type": "string",
+			"metadata": {
+				"description": "Base URL for Marketplace",
+				"artifactsBaseUrl": ""
+			},
+			"defaultValue": "https://raw.githubusercontent.com/haroldwongms/openshift-enterprise/master"
+		},
 		"masterVmSize": {
 			"type": "string",
 			"defaultValue": "Standard_DS3_v2",
@@ -195,11 +203,11 @@
 		},
 		"imageReference": "[variables('osType')]",
 		"sshKeyPath": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
-		"nodePrepScriptUrl": "https://raw.githubusercontent.com/haroldwongms/mockup/master/nodePrep.sh",
-		"masterPrepScriptUrl": "https://raw.githubusercontent.com/haroldwongms/mockup/master/masterPrep.sh",
+		"nodePrepScriptUrl": "[concat(parameters('baseUrl'), '/nodePrep.sh')]",
+		"masterPrepScriptUrl": "[concat(parameters('baseUrl'), '/masterPrep.sh')]",
 		"nodePrepScriptFileName": "nodePrep.sh",
 		"masterPrepScriptFileName": "masterPrep.sh",
-		"openshiftDeploymentTemplateUrl": "https://raw.githubusercontent.com/haroldwongms/mockup/master/openshiftdeploy.json",
+		"openshiftDeploymentTemplateUrl": "[concat(parameters('baseUrl'), '/openshiftdeploy.json')]",
 		"vmSizesMap": {
 			"Standard_A4": {
 				"storageAccountType": "Standard_LRS"
@@ -364,7 +372,54 @@
 	},
 	"resources": [
 
-		{
+        {
+			"apiVersion": "[variables('apiVersionNetwork')]",
+			"type": "Microsoft.Network/networkSecurityGroups",
+			"name": "[concat(parameters('openshiftMasterHostname'), '-nsg')]",
+			"location": "[variables('location')]",
+			"properties": {
+				"securityRules": [{
+					"name": "allowSSHin_all",
+					"properties": {
+						"description": "Allow SSH in from all locations",
+						"protocol": "Tcp",
+						"sourcePortRange": "*",
+						"destinationPortRange": "22",
+						"sourceAddressPrefix": "*",
+						"destinationAddressPrefix": "*",
+						"access": "Allow",
+						"priority": 100,
+						"direction": "Inbound"
+					}
+				}, {
+					"name": "allowHTTPS_all",
+					"properties": {
+						"description": "Allow HTTPS connections from all locations",
+						"protocol": "Tcp",
+						"sourcePortRange": "*",
+						"destinationPortRange": "443",
+						"sourceAddressPrefix": "*",
+						"destinationAddressPrefix": "*",
+						"access": "Allow",
+						"priority": 200,
+						"direction": "Inbound"
+					}
+				}, {
+					"name": "allowOpenShiftConsolIn_all",
+					"properties": {
+						"description": "Allow HTTPS connections from all locations",
+						"protocol": "Tcp",
+						"sourcePortRange": "*",
+						"destinationPortRange": "8443",
+						"sourceAddressPrefix": "*",
+						"destinationAddressPrefix": "*",
+						"access": "Allow",
+						"priority": 300,
+						"direction": "Inbound"
+					}
+				}]
+			}
+		}, {
 			"type": "Microsoft.Network/virtualNetworks",
 			"name": "[variables('virtualNetworkName')]",
 			"location": "[variables('location')]",
@@ -421,7 +476,7 @@
 				"displayName": "OpenShiftNodeLBPublicIP"
 			},
 			"properties": {
-				"publicIPAllocationMethod": "Dynamic",
+				"publicIPAllocationMethod": "Static",
 				"dnsSettings": {
 					"domainNameLabel": "[parameters('nodeLbPublicIpDnsLabelPrefix')]"
 				}
@@ -429,7 +484,7 @@
 		}, {
 			"type": "Microsoft.Compute/availabilitySets",
 			"name": "nodes",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionCompute')]",
 			"properties": {}
 		}, {
@@ -535,7 +590,7 @@
 		{
 			"type": "Microsoft.Network/publicIPAddresses",
 			"name": "[parameters('openshiftMasterPublicIpDnsLabelPrefix')]",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionNetwork')]",
 			"tags": {
 				"displayName": "OpenShiftMasterPublicIP"
@@ -549,7 +604,7 @@
 		}, {
 			"type": "Microsoft.Network/networkInterfaces",
 			"name": "[concat(parameters('openshiftMasterHostname'), 'nic')]",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionNetwork')]",
 			"tags": {
 				"displayName": "OpenShiftMasterNetworkInterface"
@@ -569,12 +624,16 @@
 							"id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'), '/subnets/', variables('masterSubnetName'))]"
 						}
 					}
-				}]
+				}],
+				"networkSecurityGroup":
+				{
+					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('openshiftMasterHostname'), '-nsg'))]"
+				}
 			}
 		}, {
 			"type": "Microsoft.Compute/virtualMachines",
 			"name": "[parameters('openshiftMasterHostname')]",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionCompute')]",
 			"tags": {
 				"displayName": "OpenShiftMasterVirtualMachine"
@@ -629,7 +688,7 @@
 		}, {
 			"type": "Microsoft.Compute/virtualMachines/extensions",
 			"name": "[concat(parameters('openshiftMasterHostname'), '/deployOpenShift')]",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionCompute')]",
 			"tags": {
 				"displayName": "PrepMaster"
@@ -654,7 +713,7 @@
 		}, {
 			"type": "Microsoft.Network/networkInterfaces",
 			"name": "[concat(variables('namingInfix'), copyIndex(), 'nic')]",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionNetwork')]",
 			"tags": {
 				"displayName": "OpenShiftNodeNetworkInterfaces"
@@ -687,7 +746,7 @@
 		}, {
 			"type": "Microsoft.Compute/virtualMachines",
 			"name": "[concat(variables('namingInfix'), '-', copyIndex())]",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionCompute')]",
 			"tags": {
 				"displayName": "OpenShiftNodes"
@@ -749,7 +808,7 @@
 		}, {
 			"type": "Microsoft.Compute/virtualMachines/extensions",
 			"name": "[concat(variables('namingInfix'), '-', copyIndex(), '/prepNodes')]",
-			"location": "[resourceGroup().location]",
+			"location": "[variables('location')]",
 			"apiVersion": "[variables('apiVersionCompute')]",
 			"tags": {
 				"displayName": "PrepNodes"
@@ -790,6 +849,9 @@
 					"contentVersion": "1.0.0.0"
 				},
 				"parameters": {
+					"baseUrl": {
+						"value": "[parameters('baseUrl')]"
+					},
 					"openshiftMasterHostname": {
 						"value": "[parameters('openshiftMasterHostname')]"
 					},
@@ -812,7 +874,7 @@
 						"value": "[parameters('adminPassword')]"
 					},
 					"defaultSubDomain": {
-						"value": "[parameters('defaultSubDomain')]"
+						"value": "[concat(reference(parameters('nodeLbPublicIpDnsLabelPrefix')).ipAddress, '.xip.io')]"
 					},
 					"sshPrivateKey": {
 						"reference": {

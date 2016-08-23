@@ -8,6 +8,10 @@ POOL_ID=$3
 # Register Host with Cloud Access Subscription
 echo $(date) " - Register host with Cloud Access Subscription"
 
+# subscription-manager unregister
+# yum -y remove RHEL7
+# rm -f /etc/yum.repos.d/rh-cloud.repo
+
 subscription-manager register --username=$USER --password=$PASSWORD
 subscription-manager attach --pool=$POOL_ID
 
@@ -15,6 +19,8 @@ subscription-manager attach --pool=$POOL_ID
 echo $(date) " - Disabling all repositories and enabling only the required repos"
 
 subscription-manager repos --disable="*"
+
+sleep 10
 
 subscription-manager repos \
     --enable="rhel-7-server-rpms" \
@@ -30,7 +36,8 @@ yum -y update
 # Install Docker 1.9.1 
 echo $(date) " - Installing Docker 1.9.1"
 
-yum -y install docker-1.9.1
+# yum -y install docker-1.9.1
+yum -y install docker-1.10.3
 sed -i -e "s#^OPTIONS='--selinux-enabled'#OPTIONS='--selinux-enabled --insecure-registry 172.30.0.0/16'#" /etc/sysconfig/docker
 
 # Create thin pool logical volume for Docker

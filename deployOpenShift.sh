@@ -21,7 +21,9 @@ echo $(date) " - Generating Private keys for use by Ansible for OpenShift Instal
 
 echo "Generating keys"
 
-runuser -l $SUDOUSER -c "echo \"$PRIVATEKEY\" > ~/.ssh/id_rsa"
+runuser -l $SUDOUSER -c "echo \"-----BEGIN RSA PRIVATE KEY-----\" > ~/.ssh/id_rsa"
+runuser -l $SUDOUSER -c "echo \"$PRIVATEKEY\" >> ~/.ssh/id_rsa"
+runuser -l $SUDOUSER -c "echo \"-----END RSA PRIVATE KEY-----\" >> ~/.ssh/id_rsa"
 runuser -l $SUDOUSER -c "chmod 600 ~/.ssh/id_rsa*"
 
 echo "Configuring SSH ControlPath to use shorter path name"
@@ -42,7 +44,8 @@ nodes
 # Set variables common for all OSEv3 hosts
 [OSEv3:vars]
 ansible_ssh_user=$SUDOUSER
-ansible_sudo=true
+#ansible_sudo=true
+ansible_become=yes
 deployment_type=openshift-enterprise
 docker_udev_workaround=True
 # containerized=true

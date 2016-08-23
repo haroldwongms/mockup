@@ -9,7 +9,7 @@ This template deploys OpenShift Enterprise with basic username / password for au
 
 |Resource           |Properties                                                                                                                          |
 |-------------------|------------------------------------------------------------------------------------------------------------------------------------|
-|Virtual Network    |**Address prefix:** 10.0.0.0/16<br />**Master subnet:** 10.0.0.0/24<br />**Node subnet:** 10.0.1.0/24                               |
+|Virtual Network    |**Address prefix:** 192.168.0.0/16<br />**Master subnet:** 192.168.1.0/24<br />**Node subnet:** 192.168.2.0/24                               |
 |Load Balancer      |2 probes and two rules for TCP 80 and TCP 443 <br/> NAT rules for SSH on Ports 2200-220X                                                                                  |
 |Public IP Addresses|OpenShift Master public IP<br />OpenShift Router public IP attached to Load Balancer                                                |
 |Storage Accounts   |2 Storage Accounts                                                                                                                  |
@@ -31,6 +31,7 @@ You will need to create a Key Vault to store your SSH Private Key that will then
   a.  Create new resource group: New-AzureRMResourceGroup -Name 'ResourceGroupName' -Location 'West US'<br/>
   b.  Create key vault: New-AzureRmKeyVault -VaultName 'KeyVaultName' -ResourceGroup 'ResourceGroupName' -Location 'West US'<br/>
   c.  Create variable with sshPrivateKey: $securesecret = ConvertTo-SecureString -String '[copy ssh Private Key here - including line feeds]' -AsPlainText -Force<br/>
+     Do not include the first line "-----BEGIN RSA PRIVATE KEY-----" and the last line "-----END RSA PRIVATE KEY-----"  <br/>
   d.  Create Secret: Set-AzureKeyVaultSecret -Name 'SecretName' -SecretValue $securesecret -VaultName 'KeyVaultName'<br/>
 
 2. Create Key Vault using Azure CLI - must be run from a Linux machine (can use Azure CLI container from Docker for Windows) or Mac<br/>
@@ -40,9 +41,10 @@ You will need to create a Key Vault to store your SSH Private Key that will then
          Ex: [azure keyvault create -u KeyVaultName -g ResourceGroupName -l 'East US'] <br/>
   c.  Create Secret: azure keyvault secret set -u \<vault-name\> -s \<secret-name\> -w \<secret-value\><br/>
          Ex: [azure keyvault secret set -u KeyVaultName -s SecretName -w <Paste private key here>] <br/>
-     1. Do not include the first line "-----BEGIN RSA PRIVATE KEY-----" and the last line "-----END RSA PRIVATE KEY-----" <br/>
-  d.  Enable the Keyvvault for Template Deployment: azure keyvault set-policy -u \<vault-name\> --enabled-for-deployment true <br/>
-         Ex: [azure keyvault set-policy -u KeyVaultName --enabled-for-deployment true] <br/>
+     Do not include the first line "-----BEGIN RSA PRIVATE KEY-----" and the last line "-----END RSA PRIVATE KEY-----" <br/>
+  <br/>
+  d.  Enable the Keyvvault for Template Deployment: azure keyvault set-policy -u \<vault-name\> --enabled-for-template-deployment true <br/>
+         Ex: [azure keyvault set-policy -u KeyVaultName --enabled-for-template-deployment true] <br/>
 
 ### azuredeploy.Parameters.json File Explained
 
