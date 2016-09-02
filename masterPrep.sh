@@ -45,16 +45,4 @@ echo $(date) " - Installing Docker 1.9.1"
 yum -y install docker-1.10.3
 sed -i -e "s#^OPTIONS='--selinux-enabled'#OPTIONS='--selinux-enabled --insecure-registry 172.30.0.0/16'#" /etc/sysconfig/docker
 
-# Create thin pool logical volume for Docker
-echo $(date) " - Creating thin pool logical volume for Docker and staring service"
-
-echo "DEVS=/dev/sdc" >> /etc/sysconfig/docker-storage-setup
-echo "VG=docker-vg" >> /etc/sysconfig/docker-storage-setup
-docker-storage-setup
-
-# Enable and start Docker services
-
-systemctl enable docker
-systemctl start docker
-
 echo $(date) " - Script Complete"
