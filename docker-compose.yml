@@ -1,0 +1,4 @@
+web:  
+    image: rbagby/generic_web  
+    ports: 
+       - "8089:80"
